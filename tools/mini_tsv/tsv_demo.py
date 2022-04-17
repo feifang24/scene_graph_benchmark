@@ -4,6 +4,7 @@ import os.path as op
 import json
 import cv2
 import base64
+import yaml
 
 from maskrcnn_benchmark.structures.tsv_file_ops import tsv_reader, tsv_writer
 from maskrcnn_benchmark.structures.tsv_file_ops import generate_linelist_file
@@ -11,11 +12,19 @@ from maskrcnn_benchmark.structures.tsv_file_ops import generate_hw_file
 from maskrcnn_benchmark.structures.tsv_file import TSVFile
 from maskrcnn_benchmark.data.datasets.utils.image_ops import img_from_base64
 
-# To generate a tsv file:
 data_path = "tools/mini_tsv/images/"
 img_list = os.listdir(data_path)
-tsv_file = os.path.join(data_path, "train.tsv")
-hw_file = os.path.join(data_path, "train.hw.tsv")
+
+split = 'train'
+
+# Create .yaml file for connecting .tsv files
+yaml_dict = {attr: f'{split}.{attr}.tsv' for attr in ['img', 'hw']} # ['img', 'hw', 'label', 'linelist]
+with open(op.join(data_path, f'{split}.yaml'), 'w') as file:
+        yaml.dump(yaml_dict, file, default_flow_style=False)
+
+# To generate a tsv file:
+img_file = os.path.join(data_path, yaml_dict['img'])
+hw_file = os.path.join(data_path, yaml_dict['hw'])
 # label_file = "tools/mini_tsv/data/train.label.tsv"
 # linelist_file = "tools/mini_tsv/data/train.linelist.tsv"
 
@@ -48,7 +57,7 @@ for img_p in img_list:
     row_hw = [img_key, json.dumps([{"height":height, "width":width}])]
     rows_hw.append(row_hw)
 
-tsv_writer(rows, tsv_file)
+tsv_writer(rows, img_file)
 tsv_writer(rows_hw, hw_file)
 # tsv_writer(rows_label, label_file)
 
