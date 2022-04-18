@@ -6,8 +6,11 @@ import os.path as op
 import argparse
 import ast
 import yaml
+from maskrcnn_benchmark.data.datasets.utils.load_files import load_from_yaml_file
 
 from maskrcnn_benchmark.structures.tsv_file_ops import tsv_writer
+
+DATA_DIR = '/home/ubuntu/s3-drive/data'
 
 def generate_features_for_split(data_dir: str, split: str):
     # Load height and width of every image
@@ -37,7 +40,6 @@ def generate_features_for_split(data_dir: str, split: str):
             features_arr.append(x.astype(np.float32))
             
         features = np.vstack(tuple(features_arr))
-        print(features.shape)
         features = base64.b64encode(features).decode("utf-8")
         return {"num_boxes": num_boxes, "features": features}
 
@@ -47,7 +49,7 @@ def generate_features_for_split(data_dir: str, split: str):
         return res
 
     # Directory of out predictions.tsv (bbox_id, class, conf, feature, rect)
-    sg_tsv = op.join(data_dir, 'inference', split, 'vinvl_vg_x152c4/predictions.tsv')
+    sg_tsv = op.join(data_dir, 'inference', split if len(args.splits) > 1 else '', 'vinvl_vg_x152c4/predictions.tsv')
     df = pd.read_csv(sg_tsv, sep='\t', header = None, converters={1:json.loads}) #converters={1:ast.literal_eval})
     df[1] = df[1].apply(lambda x: x['objects'])
 
@@ -62,14 +64,21 @@ def generate_features_for_split(data_dir: str, split: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Inference")
     parser.add_argument("data_dir", type=str)
+    parser.add_argument("--debug", action='store_true')
     args = parser.parse_args()
-    for split in ['train', 'val', 'test']:
-        yaml_dict = op.join(args.data_dir, f'{split}.yaml')
-        with open(yaml_dict, 'r') as f:
-            config = yaml.load(f)
-        label_file = op.path.join(args.data_dir, config['label'])
-        feature_file = op.path.join(args.data_dir, config['feature'])
+    args.splits = ['train', 'val', 'test'] if not args.debug else ['train']
 
-        labels_and_features = generate_features_for_split(args.data_dir, split)
-        tsv_writer(labels_and_features[[0,'label']].values.tolist(),label_file)
-        tsv_writer(labels_and_features[[0,'feature']].values.tolist(),feature_file)
+    data_dir = op.join(DATA_DIR, args.data_dir)
+    for split in args.splits:
+        yaml_dict = op.join(data_dir, f'{split}.yaml')
+        config = load_from_yaml_file(yaml_dict)
+        
+        labels_and_features = generate_features_for_split(data_dir, split)
+
+        for attr in ['label', 'feature']:
+            config[attr] = f'{split}.{attr}.tsv'
+            output_file = op.join(data_dir, config[attr])
+            tsv_writer(labels_and_features[[0, attr]].values.tolist(),output_file)
+        
+        with open(yaml_dict, 'w') as f:
+            yaml.dump(config, f, default_flow_style=False)
