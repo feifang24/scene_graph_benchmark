@@ -65,7 +65,7 @@ def main():
         # rows_label.append(row_label)
 
     # Create .yaml file for connecting .tsv files
-    yaml_dicts = {split: {attr: f'{split}.{attr}.tsv' for attr in ['img', 'hw', 'linelist', 'label', 'feature']} # ['img', 'hw', 'label', 'linelist]
+    yaml_dicts = {split: {attr: f'{split}.{attr}.tsv' for attr in ['img', 'hw', 'linelist']} # ['img', 'hw', 'label', 'linelist]
                     for split in splits}
     for split in splits:
         yaml_dicts[split]['caption'] = f'{split}_caption.json'
@@ -91,6 +91,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Inference")
     parser.add_argument("output_dir", type=str)
     args = parser.parse_args()
+    main()
 
 # # To access a tsv file:
 # # 1) Use tsv_reader to read dataset in given order
