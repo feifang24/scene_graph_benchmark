@@ -63,10 +63,11 @@ for example in tqdm(data):
     # rows_label.append(row_label)
 
 # Create .yaml file for connecting .tsv files
-yaml_dicts = {split: {attr: f'{split}.{attr}.tsv' for attr in ['img', 'hw']} # ['img', 'hw', 'label', 'linelist]
+yaml_dicts = {split: {attr: f'{split}.{attr}.tsv' for attr in ['img', 'hw', 'linelist']} # ['img', 'hw', 'label', 'linelist]
                 for split in splits}
 for split in splits:
     yaml_dicts[split]['caption'] = f'{split}_caption.json'
+    yaml_dicts[split]['labelmap'] = 'VG-SGG-dicts-vgoi6-clipped.json'
 
 for split in splits:
     img_file = op.join(output_dir, yaml_dicts[split]['img'])
@@ -76,10 +77,11 @@ for split in splits:
     with open(op.join(output_dir, f'{split}_caption.json'), 'w') as f:
         json.dump(tgt_seqs[example_split], f, indent=4)
     # label_file = "tools/mini_tsv/data/train.label.tsv"
-    # linelist_file = "tools/mini_tsv/data/train.linelist.tsv"
     # tsv_writer(rows_label, label_file)
+
     # generate linelist file
-    # generate_linelist_file(label_file, save_file=linelist_file)
+    linelist_file = op.join(output_dir, yaml_dicts[split]['linelist'])
+    generate_linelist_file(hw_file, save_file=linelist_file)
     with open(op.join(output_dir, f'{split}.yaml'), 'w') as file:
         yaml.dump(yaml_dicts[split], file, default_flow_style=False)
 
