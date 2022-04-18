@@ -65,13 +65,15 @@ for example in tqdm(data):
 # Create .yaml file for connecting .tsv files
 yaml_dicts = {split: {attr: f'{split}.{attr}.tsv' for attr in ['img', 'hw']} # ['img', 'hw', 'label', 'linelist]
                 for split in splits}
+for split in splits:
+    yaml_dicts[split]['caption'] = f'{split}_caption.json'
 
 for split in splits:
     img_file = op.join(output_dir, yaml_dicts[split]['img'])
     hw_file = op.join(output_dir, yaml_dicts[split]['hw'])
     tsv_writer(rows_img[split], img_file)
     tsv_writer(rows_hw[split], hw_file)
-    with open(op.join(output_dir), f'{split}_caption.json', 'w') as f:
+    with open(op.join(output_dir, f'{split}_caption.json'), 'w') as f:
         json.dump(tgt_seqs[example_split], f, indent=4)
     # label_file = "tools/mini_tsv/data/train.label.tsv"
     # linelist_file = "tools/mini_tsv/data/train.linelist.tsv"
