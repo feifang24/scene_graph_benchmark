@@ -44,7 +44,7 @@ def run_test(cfg, model, distributed, model_name):
             output_folders = [output_folder]
         else:
             for idx, dataset_name in enumerate(dataset_names):
-                dataset_name1 = dataset_name.replace('/', '_')
+                dataset_name1 = dataset_name.replace('/', '_').split('.')[0]
                 output_folder = os.path.join(
                     cfg.OUTPUT_DIR, "inference",
                     dataset_name1,
