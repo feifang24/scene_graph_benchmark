@@ -25,6 +25,7 @@ splits = ['train', 'val', 'test']
 
 rows_img = {split: [] for split in splits}
 rows_hw = {split: [] for split in splits}
+tgt_seqs = {split: [] for split in splits}
 # rows_label = []
 
 for example in tqdm(data):
@@ -43,6 +44,11 @@ for example in tqdm(data):
     width = img.shape[1]
     row_hw = [img_key, json.dumps([{"height":height, "width":width}])]
     rows_hw[example_split].append(row_hw)
+
+    example_tgt_seqs = {
+        tgt_type: example[tgt_type]['raw'] for tgt_type in ['description', 'caption', 'context']
+    }
+    tgt_seqs[example_split].append({'image_id': img_key, **example_tgt_seqs})
 
     # # Here is just a toy example of labels.
     # # The real labels can be generated from the annotation files
@@ -65,13 +71,15 @@ for split in splits:
     hw_file = op.join(output_dir, yaml_dicts[split]['hw'])
     tsv_writer(rows_img[split], img_file)
     tsv_writer(rows_hw[split], hw_file)
+    with open(op.join(output_dir), f'{split}_caption.json', 'w') as f:
+        json.dump(tgt_seqs[example_split], f, indent=4)
     # label_file = "tools/mini_tsv/data/train.label.tsv"
     # linelist_file = "tools/mini_tsv/data/train.linelist.tsv"
     # tsv_writer(rows_label, label_file)
     # generate linelist file
     # generate_linelist_file(label_file, save_file=linelist_file)
     with open(op.join(output_dir, f'{split}.yaml'), 'w') as file:
-            yaml.dump(yaml_dicts[split], file, default_flow_style=False)
+        yaml.dump(yaml_dicts[split], file, default_flow_style=False)
 
 
 # # To access a tsv file:
