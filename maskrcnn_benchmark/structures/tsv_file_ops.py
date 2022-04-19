@@ -37,7 +37,7 @@ def tsv_writer(values, tsv_file, sep='\t', mode='w'):
     idx = 0
     tsv_file_tmp = tsv_file + '.tmp'
     lineidx_file_tmp = lineidx_file + '.tmp'
-    with open(tsv_file_tmp, mode) as fp, open(lineidx_file_tmp, mode) as fpidx:
+    with open(tsv_file_tmp, 'w') as fp, open(lineidx_file_tmp, 'w') as fpidx:
         assert values is not None
         for value in values:
             assert value is not None
@@ -51,8 +51,14 @@ def tsv_writer(values, tsv_file, sep='\t', mode='w'):
             fp.write(v)
             fpidx.write(str(idx) + '\n')
             idx = idx + len(v)
-    os.rename(tsv_file_tmp, tsv_file)
-    os.rename(lineidx_file_tmp, lineidx_file)
+    if mode == 'w':
+        os.rename(tsv_file_tmp, tsv_file)
+        os.rename(lineidx_file_tmp, lineidx_file)
+    elif mode == 'a':
+        with open(tsv_file, 'a') as original_fp, open(tsv_file_tmp, 'r') as new_fp:
+            original_fp.write(new_fp.read())
+        with open(lineidx_file, 'a') as original_fp, open(lineidx_file_tmp, 'r') as new_fp:
+            original_fp.write(new_fp.read())
 
 
 def tsv_reader(tsv_file, sep='\t'):
