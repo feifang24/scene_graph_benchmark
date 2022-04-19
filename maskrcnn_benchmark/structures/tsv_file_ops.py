@@ -31,13 +31,13 @@ def load_linelist_file(linelist_file):
         return line_list
 
 
-def tsv_writer(values, tsv_file, sep='\t'):
+def tsv_writer(values, tsv_file, sep='\t', mode='w'):
     mkdir(op.dirname(tsv_file))
     lineidx_file = op.splitext(tsv_file)[0] + '.lineidx'
     idx = 0
     tsv_file_tmp = tsv_file + '.tmp'
     lineidx_file_tmp = lineidx_file + '.tmp'
-    with open(tsv_file_tmp, 'w') as fp, open(lineidx_file_tmp, 'w') as fpidx:
+    with open(tsv_file_tmp, mode) as fp, open(lineidx_file_tmp, mode) as fpidx:
         assert values is not None
         for value in values:
             assert value is not None
