@@ -77,7 +77,7 @@ def main():
         tsv_writer(rows_img[split], img_file)
         tsv_writer(rows_hw[split], hw_file)
         with open(op.join(output_dir, f'{split}_caption.json'), 'w') as f:
-            json.dump(tgt_seqs[example_split], f, indent=4)
+            json.dump(tgt_seqs[split], f, indent=4)
         # label_file = "tools/mini_tsv/data/train.label.tsv"
         # tsv_writer(rows_label, label_file)
 
