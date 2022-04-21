@@ -70,6 +70,7 @@ if __name__ == "__main__":
 
     data_dir = op.join(DATA_DIR, args.data_dir)
     for split in args.splits:
+        print(f'Generating labels and features for {split} split ...')
         yaml_dict = op.join(data_dir, f'{split}.yaml')
         config = load_from_yaml_file(yaml_dict)
         
