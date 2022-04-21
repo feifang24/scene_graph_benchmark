@@ -52,7 +52,8 @@ def generate_features_for_split(data_dir: str, split: str):
     with open(sg_tsv, 'r') as f:
         reader = csv.reader(f, delimiter='\t')
         for row in reader:
-            data = json.loads(row[1])['objects']
+            row = json.loads(row)
+            data = row[1]['objects']
             x = (row[0], data)
             features.append(generate_features(x))
     return features
@@ -87,7 +88,7 @@ if __name__ == "__main__":
         yaml_dict = op.join(data_dir, f'{split}.yaml')
         config = load_from_yaml_file(yaml_dict)
         
-        for attr in ['label', 'feature']:
+        for attr in ['feature', 'label']:
             generate_fn = generate_features_for_split if attr == 'feature' else generate_labels_for_split
             config[attr] = f'{split}.{attr}.tsv'
             output_file = op.join(data_dir, config[attr])
