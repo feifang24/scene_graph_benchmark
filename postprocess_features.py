@@ -32,7 +32,7 @@ def generate_features_for_split(data_dir: str, split: str):
         # for every detected object in img
         for i in range(num_boxes):
             # read image region feature vector
-            features = np.frombuffer(base64.b64decode(data[i]['feature']),np.float32)
+            features = np.frombuffer(base64.b64decode(data[i].pop('feature')),np.float32)
             # add 6 additional dimensions
             pos_feat = generate_positional_features(data[i]['rect'],h,w)
             # stack feature vector with 6 additional dimensions
@@ -45,7 +45,7 @@ def generate_features_for_split(data_dir: str, split: str):
 
     def generate_labels(x):
         data = x[1]
-        res = [{"class":el['class'], "conf":el['conf'], "rect": el['rect']} for el in data] 
+        res = [{"class":el.pop('class'), "conf":el.pop('conf'), "rect": el['rect']} for el in data]
         return res
 
     # Directory of out predictions.tsv (bbox_id, class, conf, feature, rect)
