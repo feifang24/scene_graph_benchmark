@@ -52,9 +52,8 @@ def generate_features_for_split(data_dir: str, split: str):
     with open(sg_tsv, 'r') as f:
         reader = csv.reader(f, delimiter='\t')
         for row in reader:
-            row = json.loads(row)
-            data = row[1]['objects']
-            x = (row[0], data)
+            data = json.loads(row[1])['objects']
+            x = (ast.literal_eval(row[0]), data)
             features.append(generate_features(x))
     return features
 
@@ -70,7 +69,7 @@ def generate_labels_for_split(data_dir: str, split: str):
         reader = csv.reader(f, delimiter='\t')
         for row in reader:
             data = json.loads(row[1])['objects']
-            x = (row[0], data)
+            x = (ast.literal_eval(row[0]), data)
             labels.append(generate_labels(x))
     return labels
 
