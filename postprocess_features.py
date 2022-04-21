@@ -6,9 +6,13 @@ import os.path as op
 import argparse
 import ast
 import yaml
+import csv
 from maskrcnn_benchmark.data.datasets.utils.load_files import load_from_yaml_file
 
 from maskrcnn_benchmark.structures.tsv_file_ops import tsv_writer
+
+import sys
+csv.field_size_limit(sys.maxsize)
 
 DATA_DIR = '/home/ubuntu/s3-drive/data'
 
@@ -32,34 +36,43 @@ def generate_features_for_split(data_dir: str, split: str):
         # for every detected object in img
         for i in range(num_boxes):
             # read image region feature vector
-            features = np.frombuffer(base64.b64decode(data[i].pop('feature')),np.float32)
+            features = np.frombuffer(base64.b64decode(data[i]['feature']),np.float32)
             # add 6 additional dimensions
             pos_feat = generate_positional_features(data[i]['rect'],h,w)
             # stack feature vector with 6 additional dimensions
             x = np.hstack((features,pos_feat))
             features_arr.append(x.astype(np.float32))
-            
         features = np.vstack(tuple(features_arr))
         features = base64.b64encode(features).decode("utf-8")
-        return {"num_boxes": num_boxes, "features": features}
+        return [idx, json.dumps({"num_boxes": num_boxes, "features": features})]
 
-    def generate_labels(x):
-        data = x[1]
-        res = [{"class":el.pop('class'), "conf":el.pop('conf'), "rect": el['rect']} for el in data]
-        return res
-
+    features = []
     # Directory of out predictions.tsv (bbox_id, class, conf, feature, rect)
     sg_tsv = op.join(data_dir, 'inference', split if len(args.splits) > 1 else '', 'vinvl_vg_x152c4/predictions.tsv')
-    df = pd.read_csv(sg_tsv, sep='\t', header = None, converters={1:json.loads}) #converters={1:ast.literal_eval})
-    df[1] = df[1].apply(lambda x: x['objects'])
+    with open(sg_tsv, 'r') as f:
+        reader = csv.reader(f, delimiter='\t')
+        for row in reader:
+            data = json.loads(row[1])['objects']
+            x = (row[0], data)
+            features.append(generate_features(x))
+    return features
 
-    # Generate features from predictions.tsv
-    df['feature'] = df.apply(generate_features,axis=1)
-    df['feature'] = df['feature'].apply(json.dumps)
+def generate_labels_for_split(data_dir: str, split: str):
+    def generate_labels(x):
+        data = x[1]
+        res = [{"class":el['class'], "conf":el['conf'], "rect": el['rect']} for el in data]
+        return [x[0], json.dumps(res)]
 
-    df['label'] = df.apply(generate_labels,axis=1)
-    df['label'] = df['label'].apply(json.dumps)
-    return df
+    labels = []
+    sg_tsv = op.join(data_dir, 'inference', split if len(args.splits) > 1 else '', 'vinvl_vg_x152c4/predictions.tsv')
+    with open(sg_tsv, 'r') as f:
+        reader = csv.reader(f, delimiter='\t')
+        for row in reader:
+            data = json.loads(row[1])['objects']
+            x = (row[0], data)
+            labels.append(generate_labels(x))
+    return labels
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Inference")
@@ -74,12 +87,11 @@ if __name__ == "__main__":
         yaml_dict = op.join(data_dir, f'{split}.yaml')
         config = load_from_yaml_file(yaml_dict)
         
-        labels_and_features = generate_features_for_split(data_dir, split)
-
         for attr in ['label', 'feature']:
+            generate_fn = generate_features_for_split if attr == 'feature' else generate_labels_for_split
             config[attr] = f'{split}.{attr}.tsv'
             output_file = op.join(data_dir, config[attr])
-            tsv_writer(labels_and_features[[0, attr]].values.tolist(),output_file)
+            tsv_writer(generate_fn(data_dir, split),output_file)
         
         with open(yaml_dict, 'w') as f:
             yaml.dump(config, f, default_flow_style=False)
